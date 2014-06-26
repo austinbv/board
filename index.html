@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>board.io</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.1/normalize.min.css"/>
+  <style>
+    body {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+  </style>
+</head>
+<body>
+<canvas height=15 width="10">
+  You need to have a browser that supports the canvas element
+</canvas>
+<script>
+  function Space(x, y, ctx) {
+    var that = this;
+    var black = false;
+    var interval = null;
+
+    this.write = function(letter) {
+      ctx.font = '15pt monospace';
+      this.letter = letter;
+      ctx.fillText(this.letter, x, y);
+    }
+
+    this.goBlack = function() {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(x, y, 1 + dw.fontWidth, -1 * (dw.fontHeight + 1));
+      black = true;
+    }
+
+    this.goBack = function() {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x, y, dw.fontWidth + 1, -1 * (dw.fontHeight + 1));
+      ctx.fillStyle = '#000000';
+      if (this.letter) {
+        this.write(this.letter);
+      }
+      black = false;
+    }
+
+    this.blink = function() {
+      interval = setInterval(function() {
+        console.log(black)
+        !black ? that.goBlack() : that.goBack();
+      }, 500)
+    }
+
+    this.stopBlinking = function() {
+      clearInterval(interval);
+      this.goBack();
+    }
+  }
+
+  function WritingArea(canvas, fontHeight) {
+    var that = this;
+    var spaces = null;
+    var canvas = $('canvas');
+    var ctx = canvas[0].getContext('2d');
+
+    this.fontHeight = fontHeight;
+    this.windowHeight = $('body').height();
+    this.windowWidth = $('body').width();
+    this.activeSpace = null;
+
+    ctx.font = '15pt monospace';
+    this.fontWidth = ctx.measureText("A").width;
+    canvas.attr({height: this.windowHeight, width: this.windowWidth});
+    canvas.on("click", function(e){
+      var x = e.offsetX,
+        y = e.offsetY;
+      console.log("click x: ", x, "y: ", y);
+
+      var space = that.getSpace(Math.floor(x / dw.fontWidth), Math.floor(y / dw.fontHeight));
+
+      space.goBlack();
+      that.setActiveSpace(space);
+    });
+
+    $(document).keypress(function(e) {
+      that.activeSpace.write(String.fromCharCode(e.which))
+      that.activeSpace = space.get
+    });
+
+    this.rows = function() {
+      return Math.ceil(this.windowHeight / this.fontHeight) - 1;
+    }
+
+    this.columns = function() {
+      return Math.ceil(this.windowWidth / this.fontWidth);
+    }
+
+    this.getSpace = function(x, y) {
+      return spaces[x][y];
+    }
+
+    this.getSpaces = function() {
+      var rows = Array.apply(null, new Array(this.rows()));
+      var columns = Array.apply(null, new Array(this.columns()));
+      if (!spaces) {
+        spaces = columns.map(function(_, x) {
+          return rows.map(function(_, y) {
+            return new Space(x * this.fontWidth, y * this.fontHeight + this.fontHeight, ctx);
+          }, this)
+        }, this);
+      }
+      return spaces;
+    }
+
+    this.setActiveSpace = function(space) {
+      if (this.activeSpace !== null) {
+        this.activeSpace.stopBlinking();
+      }
+
+      this.activeSpace = space;
+      this.activeSpace.blink();
+    }
+
+    this.getSpaces();
+  }
+
+  var dw = new WritingArea($('canvas'), 25);
+
+</script>
+</body>
+</html>
